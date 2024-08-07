@@ -6,7 +6,7 @@ interface InputProps {
   type: string;
   placeholder: string;
   value: string;
-  change: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  change: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
 const Input: React.FC<InputProps> = ({ label, name, type, placeholder, value, change }) => {

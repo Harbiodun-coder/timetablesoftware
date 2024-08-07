@@ -128,29 +128,25 @@ const StudentProfile = () => {
                     name="name"
                     type="text"
                     value={formData.name}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <Input
                     label="Email"
                     name="email"
                     type="email"
                     value={formData.email}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <Input
                     label="Course"
                     name="course"
                     type="text"
                     value={formData.course}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <Input
                     label="Year"
                     name="year"
                     type="text"
                     value={formData.year}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <div className="mt-4 flex justify-end gap-4">
                     <Button
                       intent="primary"

@@ -1,4 +1,3 @@
-// pages/admin/halls.tsx
 import React, { useState } from "react";
 import Link from "next/link";
 import { FaEdit, FaTrash } from "react-icons/fa";
@@ -178,7 +177,7 @@ const ManageHalls = () => {
                   setNewHall({ ...newHall, capacity: Number(e.target.value) })
                 }
                 placeholder={""}
-                value={newHall.capacity}
+                value={newHall.capacity.toString()} // Convert number to string here
               />
             </div>
           </div>

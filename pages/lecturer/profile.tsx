@@ -1,4 +1,4 @@
-// pages/lecturer/profile.tsx
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaEdit } from "react-icons/fa";
@@ -129,29 +129,25 @@ const LecturerProfile = () => {
                     name="name"
                     type="text"
                     value={formData.name}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <Input
                     label="Email"
                     name="email"
                     type="email"
                     value={formData.email}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <Input
                     label="Department"
                     name="department"
                     type="text"
                     value={formData.department}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <Input
                     label="Office"
                     name="office"
                     type="text"
                     value={formData.office}
-                    change={handleInputChange}
-                  />
+                    change={handleInputChange} placeholder={""}                  />
                   <div className="mt-4 flex justify-end gap-4">
                     <Button
                       intent="primary"
