@@ -1,13 +1,15 @@
 
-import React, { useState } from "react";
+import React, { useState, ReactNode  } from "react";
 import { CiSearch } from "react-icons/ci";
 import { IoMdNotificationsOutline } from "react-icons/io";
 import { useRouter } from "next/router";
 import Hamburger2 from "./Hamburger2";
 
 
-
-const Layout = ({ children }) => {
+interface LayoutProps {
+  children: ReactNode;
+}
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   
