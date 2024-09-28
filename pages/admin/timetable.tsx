@@ -8,8 +8,8 @@ import { IoMdArrowRoundBack } from "react-icons/io";
 
 // Mock data for timetable
 const mockTimetable = [
-  { id: 1, course: "Mathematics 101", lecturer: "Dr. John Doe", schedule: "Mon 10:00-11:30", hall: "A101" },
-  { id: 2, course: "Physics 201", lecturer: "Prof. Jane Smith", schedule: "Tue 14:00-15:30", hall: "B202" },
+  { id: 1, course: "Mathematics 101", lecturer: "Dr. John Doe", schedule: "Mon 10:00-11:30", hall: "Benson Hall" },
+  { id: 2, course: "Physics 201", lecturer: "Prof. Jane Smith", schedule: "Tue 14:00-15:30", hall: "Science Complex Hall 3" },
   // Add more mock timetable data as needed
 ];
 

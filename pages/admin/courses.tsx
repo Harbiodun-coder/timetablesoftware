@@ -1,4 +1,4 @@
-// pages/admin/courses.tsx
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { FaEdit, FaTrash } from "react-icons/fa";
