@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -9,24 +9,41 @@ import AdminLayout from "@/components/AdminLayout";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
 type Hall = {
-  id: number;
+  _id: string; 
   name: string;
   capacity: number;
 };
 
-const mockHalls: Hall[] = [
-  { id: 1, name: "Science Complex Hall 1", capacity: 100 },
-  { id: 2, name: "Science Complex Hall 2", capacity: 200 },
-];
-
 const ManageHalls = () => {
-  const [halls, setHalls] = useState<Hall[]>(mockHalls);
+  const [halls, setHalls] = useState<Hall[]>([]); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newHall, setNewHall] = useState({ name: "", capacity: 0 });
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentHallId, setCurrentHallId] = useState<number | null>(null);
+  const [currentHallId, setCurrentHallId] = useState<string | null>(null);
 
-  const handleDelete = (id: number) => {
+  // Fetch all halls from backend
+  useEffect(() => {
+    const fetchHalls = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/halls", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("timetable-token")}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch halls");
+        }
+        const data = await response.json();
+        setHalls(data); // Set fetched halls from backend
+      } catch (error) {
+        console.error("Error fetching halls:", error);
+      }
+    };
+    fetchHalls();
+  }, []);
+
+  // Delete a hall by making a DELETE request to the backend
+  const handleDelete = async (id: string) => {
     Swal.fire({
       title: "Are you sure?",
       text: "Do you really want to delete this hall?",
@@ -34,31 +51,72 @@ const ManageHalls = () => {
       showCancelButton: true,
       confirmButtonText: "Yes, delete it!",
       cancelButtonText: "No, keep it",
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setHalls(halls.filter((hall) => hall.id !== id));
-        Swal.fire("Deleted!", "The hall has been deleted.", "success");
+        try {
+          const response = await fetch(`http://localhost:5000/api/halls/${id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("timetable-token")}`,
+            },
+          });
+          if (!response.ok) {
+            throw new Error("Failed to delete hall");
+          }
+          setHalls(halls.filter((hall) => hall._id !== id)); // Remove deleted hall from state
+          Swal.fire("Deleted!", "The hall has been deleted.", "success");
+        } catch (error) {
+          Swal.fire("Error", "Failed to delete the hall.", "error");
+        }
       }
     });
   };
 
-  const handleSaveHall = () => {
+  // Add or update hall by sending POST or PUT request to the backend
+  const handleSaveHall = async () => {
     if (newHall.name && newHall.capacity > 0) {
-      if (isEditMode && currentHallId !== null) {
-        setHalls(
-          halls.map((hall) =>
-            hall.id === currentHallId ? { ...hall, ...newHall } : hall
-          )
-        );
-        Swal.fire("Updated!", "The hall has been updated.", "success");
-      } else {
-        setHalls([...halls, { ...newHall, id: halls.length + 1 }]);
-        Swal.fire("Added!", "The hall has been added.", "success");
+      try {
+        if (isEditMode && currentHallId !== null) {
+          // Edit existing hall
+          const response = await fetch(`http://localhost:5000/api/halls/${currentHallId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("timetable-token")}`,
+            },
+            body: JSON.stringify(newHall),
+          });
+          if (!response.ok) {
+            throw new Error("Failed to update hall");
+          }
+          const updatedHall = await response.json();
+          setHalls(halls.map((hall) => (hall._id === currentHallId ? updatedHall : hall)));
+          Swal.fire("Updated!", "The hall has been updated.", "success");
+        } else {
+          // Add new hall
+          const response = await fetch("http://localhost:5000/api/halls", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("timetable-token")}`,
+            },
+            body: JSON.stringify(newHall),
+          });
+          if (!response.ok) {
+            throw new Error("Failed to add hall");
+          }
+          const newHallData = await response.json();
+          setHalls([...halls, newHallData]); // Add the new hall to state
+          Swal.fire("Added!", "The hall has been added.", "success");
+        }
+        // Reset modal and form
+        setNewHall({ name: "", capacity: 0 });
+        setIsModalOpen(false);
+        setIsEditMode(false);
+        setCurrentHallId(null);
+      } catch (error) {
+        Swal.fire("Error", "Failed to save the hall. Please try again.", "error");
       }
-      setNewHall({ name: "", capacity: 0 });
-      setIsModalOpen(false);
-      setIsEditMode(false);
-      setCurrentHallId(null);
     } else {
       Swal.fire({
         title: "Error",
@@ -72,7 +130,7 @@ const ManageHalls = () => {
   const handleEditHall = (hall: Hall) => {
     setNewHall({ name: hall.name, capacity: hall.capacity });
     setIsEditMode(true);
-    setCurrentHallId(hall.id);
+    setCurrentHallId(hall._id);
     setIsModalOpen(true);
   };
 
@@ -126,7 +184,7 @@ const ManageHalls = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {halls.map((hall) => (
-                  <tr key={hall.id}>
+                  <tr key={hall._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {hall.name}
                     </td>
@@ -141,7 +199,7 @@ const ManageHalls = () => {
                         <FaEdit />
                       </button>
                       <button
-                        onClick={() => handleDelete(hall.id)}
+                        onClick={() => handleDelete(hall._id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         <FaTrash />
