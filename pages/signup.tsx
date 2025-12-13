@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
@@ -17,53 +17,29 @@ export default function SignupPage() {
     event.preventDefault();
     setLoading(true);
 
-    const signupDetails = {
-      email,
-      password,
-      name,
-      role,
-    };
+    const signupDetails = { email, password, name, role };
 
     try {
       const response = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signupDetails),
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (!response.ok) throw new Error("Network response was not ok");
 
-      const data = await response.json();
-      const { email, role, jwt_token } = data.data;
-
-      localStorage.setItem("timetable-token", jwt_token);
+      await response.json(); // You can handle returned data if needed
 
       Swal.fire({
         title: "Success",
-        text: "Signup successful!",
+        text: "Signup successful! Please log in with your new account.",
         icon: "success",
         confirmButtonText: "OK",
+      }).then(() => {
+        // Redirect to login page
+        router.push("/login");
       });
-
-      if (role === "admin") {
-        router.push("/admin");
-      } else if (role === "lecturer") {
-        router.push("/lecturer");
-      } else if (role === "student") {
-        router.push("/student/timetable");
-      } else {
-        Swal.fire({
-          title: "Error",
-          text: "Unknown user role",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-      }
-    } catch (error) {
+    } catch {
       Swal.fire({
         title: "Error",
         text: "Failed to sign up. Please try again.",
@@ -75,115 +51,70 @@ export default function SignupPage() {
     }
   };
 
-  const handleChangeEmail = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setEmail(e.target.value);
-  };
-
-  const handleChangePassword = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setPassword(e.target.value);
-  };
-
-  const handleChangeName = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setName(e.target.value);
-  };
-
-  const handleChangeRole = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setRole(e.target.value);
-  };
-
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
-        <h2 className="text-center text-3xl font-extrabold text-[#0065C2]">
-          Sign Up for LASU Timetable System
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-6 relative overflow-hidden">
+        <div className="absolute -top-16 -left-16 w-40 h-40 bg-blue-300 rounded-full opacity-30 animate-pulse"></div>
+        <div className="absolute -bottom-16 -right-16 w-56 h-56 bg-indigo-300 rounded-full opacity-30 animate-pulse"></div>
+
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+          Sign Up for LASU Timetable
         </h2>
         <p className="text-center text-gray-500">
-          Please fill in the details to create your account
+          Create an account and start managing your timetable effortlessly
         </p>
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <input type="hidden" name="remember" value="true" />
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="name" className="sr-only">
-                Name
-              </label>
-              <Input
-                name="name"
-                type="text"
-                placeholder="Name"
-                value={name}
-                change={handleChangeName}
-                label={""}
-              />
-            </div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <Input
-                name="email"
-                type="email"
-                placeholder="Email address"
-                value={email}
-                change={handleChangeEmail}
-                label={""}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <Input
-                name="password"
-                type="password"
-                placeholder="Password"
-                value={password}
-                change={handleChangePassword}
-                label={""}
-              />
-            </div>
-            <div>
-              <label htmlFor="role" className="sr-only">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                required
-                value={role}
-                onChange={handleChangeRole}
-                className="appearance-none  relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              >
-                <option value="student">Student</option>
-                <option value="lecturer">Lecturer</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-          <div className="w-full mt-4">
-            <Button
-              intent="primary"
-              size="bg"
-              text={loading ? "Signing up..." : "Sign up"}
-              isLoading={loading}
-              type="submit"
-            />
-          </div>
-          <div className="flex justify-center">
-            <span className="text-sm">
-              Already have an account?{" "}
-              <Link href="/login" className="text-blue-700">
-                Log in
-              </Link>
-            </span>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <Input
+            name="name"
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            change={(e) => setName(e.target.value)}
+            label=""
+          />
+          <Input
+            name="email"
+            type="email"
+            placeholder="Email address"
+            value={email}
+            change={(e) => setEmail(e.target.value)}
+            label=""
+          />
+          <Input
+            name="password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            change={(e) => setPassword(e.target.value)}
+            label=""
+          />
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-700 text-sm transition-all duration-200 hover:shadow-md"
+          >
+            <option value="student">Student</option>
+            <option value="lecturer">Lecturer</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <Button
+            intent="primary"
+            size="bg"
+            text={loading ? "Signing up..." : "Sign Up"}
+            isLoading={loading}
+            type="submit"
+          />
+
+          <div className="text-center text-gray-500 text-sm">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-blue-600 font-semibold hover:underline"
+            >
+              Log in
+            </Link>
           </div>
         </form>
       </div>

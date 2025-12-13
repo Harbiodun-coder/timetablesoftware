@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const hallRoutes = require('./routes/hallRoutes');
+const courseRoutes = require('./routes/courseRoutes')
 
 // Load environment variables
 dotenv.config();
@@ -13,13 +14,14 @@ app.use(express.json());  // To parse JSON
 app.use(cors());  // Enable CORS
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/halls', hallRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/halls", hallRoutes);
+app.use("/api/courses", courseRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

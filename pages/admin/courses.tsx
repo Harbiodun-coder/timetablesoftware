@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -9,32 +8,17 @@ import Button from "@/components/Button";
 import AdminLayout from "@/components/AdminLayout";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
-// Define the Course type
 type Course = {
-  id: number;
+  _id: string;
   name: string;
   lecturer: string;
+  day: string;
+  time: string;
   schedule: string;
 };
 
-const mockCourses: Course[] = [
-  // {
-  //   id: 1,
-  //   name: "Mathematics 101",
-  //   lecturer: "Dr. John Doe",
-  //   schedule: "Mon & Wed 10:00-11:30",
-  // },
-  // {
-  //   id: 2,
-  //   name: "Physics 201",
-  //   lecturer: "Dr. Jane Smith",
-  //   schedule: "Tue & Thu 14:00-15:30",
-  // },
-  // // Add more mock courses as needed
-];
-
 const ManageCourses = () => {
-  const [courses, setCourses] = useState<Course[]>(mockCourses);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: "",
@@ -43,65 +27,111 @@ const ManageCourses = () => {
     time: "",
   });
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
+  const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
 
-  const handleDelete = (id: number) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "Do you really want to delete this course?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "No, keep it",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setCourses(courses.filter((course) => course.id !== id));
-        Swal.fire("Deleted!", "The course has been deleted.", "success");
-      }
-    });
-  };
+  const API_URL = "http://localhost:5000/api/courses";
 
-  const handleSaveCourse = () => {
-    if (newCourse.name && newCourse.lecturer && newCourse.day && newCourse.time) {
-      const schedule = `${newCourse.day} ${newCourse.time}`;
-      if (isEditMode && currentCourseId !== null) {
-        setCourses(
-          courses.map((course) =>
-            course.id === currentCourseId ? { ...course, ...newCourse, schedule } : course
-          )
-        );
-        Swal.fire("Updated!", "The course has been updated.", "success");
-      } else {
-        setCourses([...courses, { ...newCourse, schedule, id: courses.length + 1 }]);
-        Swal.fire("Added!", "The course has been added.", "success");
-      }
-      setNewCourse({ name: "", lecturer: "", day: "", time: "" });
-      setIsModalOpen(false);
-      setIsEditMode(false);
-      setCurrentCourseId(null);
-    } else {
-      Swal.fire({
-        title: "Error",
-        text: "Please fill in all fields",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
+  // Fetch courses from backend
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setCourses(data.data);
+    } catch (err) {
+      console.error("Failed to fetch courses", err);
+      Swal.fire("Error", "Failed to load courses", "error");
     }
   };
 
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  // Save or update course
+  const handleSaveCourse = async () => {
+    if (
+      !newCourse.name ||
+      !newCourse.lecturer ||
+      !newCourse.day ||
+      !newCourse.time
+    ) {
+      Swal.fire("Error", "Please fill in all fields", "error");
+      return;
+    }
+
+    try {
+      if (isEditMode && currentCourseId) {
+        // Update course
+        const res = await fetch(`${API_URL}/${currentCourseId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newCourse),
+        });
+        const data = await res.json();
+        setCourses(
+          courses.map((c) => (c._id === currentCourseId ? data.data : c))
+        );
+        Swal.fire("Updated!", "Course updated successfully", "success");
+      } else {
+        // Add new course
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newCourse),
+        });
+        const data = await res.json();
+        setCourses([...courses, data.data]);
+        Swal.fire("Added!", "Course added successfully", "success");
+      }
+
+      setIsModalOpen(false);
+      setNewCourse({ name: "", lecturer: "", day: "", time: "" });
+      setIsEditMode(false);
+      setCurrentCourseId(null);
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to save course", "error");
+    }
+  };
+
+  // Delete course
+  const handleDelete = async (id: string) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to delete this course?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        setCourses(courses.filter((c) => c._id !== id));
+        Swal.fire("Deleted!", "Course deleted successfully", "success");
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to delete course", "error");
+      }
+    }
+  };
+
+  // Edit course
   const handleEditCourse = (course: Course) => {
-    const [day, ...timeParts] = course.schedule.split(" ");
-    const time = timeParts.join(" ");
-    setNewCourse({ name: course.name, lecturer: course.lecturer, day, time });
+    setNewCourse({
+      name: course.name,
+      lecturer: course.lecturer,
+      day: course.day,
+      time: course.time,
+    });
     setIsEditMode(true);
-    setCurrentCourseId(course.id);
+    setCurrentCourseId(course._id);
     setIsModalOpen(true);
   };
 
   return (
     <AdminLayout>
       <div className="min-h-screen bg-[white] flex flex-col">
-        {/* Header */}
         <header className="bg-white shadow-md">
           <div className="container mx-auto px-6 py-4 flex justify-between items-center">
             <Link href="/admin" className="text-blue-600 hover:underline">
@@ -111,24 +141,21 @@ const ManageCourses = () => {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex-grow container mx-auto px-6 py-16">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Courses</h2>
-            <div className="">
-              <Button
-                intent="primary"
-                size="sm"
-                text="Add Course"
-                isLoading={false}
-                action={() => {
-                  setIsEditMode(false);
-                  setCurrentCourseId(null);
-                  setNewCourse({ name: "", lecturer: "", day: "", time: "" });
-                  setIsModalOpen(true);
-                }}
-              />
-            </div>
+            <Button
+              intent="primary"
+              size="sm"
+              text="Add Course"
+              isLoading={false}
+              action={() => {
+                setIsEditMode(false);
+                setCurrentCourseId(null);
+                setNewCourse({ name: "", lecturer: "", day: "", time: "" });
+                setIsModalOpen(true);
+              }}
+            />
           </div>
 
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -151,7 +178,7 @@ const ManageCourses = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {courses.map((course) => (
-                  <tr key={course.id}>
+                  <tr key={course._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {course.name}
                     </td>
@@ -169,7 +196,7 @@ const ManageCourses = () => {
                         <FaEdit />
                       </button>
                       <button
-                        onClick={() => handleDelete(course.id)}
+                        onClick={() => handleDelete(course._id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         <FaTrash />
@@ -182,13 +209,12 @@ const ManageCourses = () => {
           </div>
         </main>
 
-        {/* Add/Edit Course Modal */}
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
           <div className="mt-3 text-center sm:mt-5">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
               {isEditMode ? "Edit Course" : "Add New Course"}
             </h3>
-            <div className="mt-2">
+            <div className="mt-2 space-y-3">
               <Input
                 label="Course Name"
                 name="name"
@@ -231,7 +257,7 @@ const ManageCourses = () => {
               />
             </div>
           </div>
-          <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
+          <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse gap-2">
             <Button
               intent="primary"
               size="bg"
@@ -249,8 +275,7 @@ const ManageCourses = () => {
           </div>
         </Modal>
 
-        {/* Footer */}
-        <footer className="bg-gray-800 text-white py-4">
+        <footer className="bg-gray-800 text-white py-4 mt-auto">
           <div className="container mx-auto text-center">
             <p>&copy; 2024 Timetable Management System. All rights reserved.</p>
           </div>
